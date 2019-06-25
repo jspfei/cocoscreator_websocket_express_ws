@@ -14,6 +14,10 @@ export default class NewClass extends cc.Component {
   //监听断开连接
   closeHandler(){
     console.log("ws  close")
+     //连接测试超过三次提示玩家重连
+     if(NetWork.getInstance().getConnectCount() > clientDefine.clientDefine_max_connect_times){
+            console.log('连接服务失败')
+    }   
 }
 //连接成功
 openHandler(){
@@ -22,6 +26,7 @@ openHandler(){
 //连接失败
 failedHandler(){
     console.log("ws  failed")
+   
 }
 //发送消息
 btn_onclick(){
@@ -38,6 +43,7 @@ btn_close(){
 //创建连接
 btn_create(){
     NetWork.getInstance().connect("ws://127.0.0.1:3000/", false);
+    NetWork.getInstance().setAutoConnect(true)
     NetWork.getInstance().addDelegate(this);
 
 }

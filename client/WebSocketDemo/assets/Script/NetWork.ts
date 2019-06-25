@@ -1,12 +1,13 @@
 const { ccclass, property } = cc._decorator;
 
 export enum clientDefine{
-    clientDefine_connect_timeout = 30,
-    clientDefine_timeout = 10,
-    clientDefine_headmsg_timeout = 20,
+    clientDefine_connect_timeout = 4000,
+    clientDefine_timeout = 15000,
+    clientDefine_headmsg_timeout = 8000,
     clientDefine_open = 'open',
     clientDefine_close ='close',
-    clientDefine_failed = 'failed'
+    clientDefine_failed = 'failed',
+    clientDefine_max_connect_times = 3
 }
 /**
  * 网络连接状态
@@ -24,6 +25,7 @@ export enum NetWorkState {
 @ccclass
 export class NetWork {
     private static m_sInstance: NetWork = null;
+ 
 
     private m_cDstIP: string = "";
     private m_pSocket: WebSocket = null;
@@ -159,11 +161,13 @@ export class NetWork {
         console.log("手动关闭 state : " , state);
         this.m_bIsHoldClose = isHoldClose;
         if (this.m_pSocket) {
+         
            this.m_pSocket.onopen = () => { };
            this.m_pSocket.onclose = () => { };
            this.m_pSocket.onerror = () => { };
            this.m_pSocket.onmessage = () => { };
-           this.m_pSocket.close();
+           this.m_pSocket.close(); 
+          
         }
         this.onClose(null);
     }
@@ -173,6 +177,17 @@ export class NetWork {
      * 延时重新连接
      */
     private timeOutConnect(): void {
+        console.log("timeOutConnect")
+        //是否自动连接
+        if(!this.m_bIsAutoConnect){
+            return;
+        }
+        console.log("this.m_nConnectCount  ",this.m_nConnectCount)
+        //自动连接超过 3次 手动断开连接
+        if(this.m_nConnectCount > clientDefine.clientDefine_max_connect_times){
+            this.closeNetWork(true);
+            return;
+        }
         this.m_pSocket && this.closeNetWork(false);
         if (!this.m_bIsHoldClose) {
             if (this.m_nConnectNum != -1) {
@@ -191,7 +206,7 @@ export class NetWork {
      * @param dstIP ip ws://127.0.0.1:8080/
      * @param isSendHeard 是否发送心跳包
      * @example 
-     * this.connect("ws://127.0.0.1:3000/", false);
+    //  * this.connect("ws://127.0.0.1:3000/", false);
      */
     public connect(dstIP: string, isSendHeard: boolean): boolean {
         this.m_cDstIP = dstIP;
@@ -226,7 +241,8 @@ export class NetWork {
         }
         this.m_nConnectGameServerNum_1 = setTimeout(() => {
             if (!this.isConnect()) {
-                this.m_pSocket && this.closeNetWork(false);
+                console.log("doConnect")
+               this.m_pSocket && this.closeNetWork(false);
             }
         }, clientDefine.clientDefine_timeout);
 
@@ -250,8 +266,8 @@ export class NetWork {
 
     }
     private onClose(ev): void {
-        console.log(" close ");
-
+        console.log(" close "); 
+        console.log(" this.m_nConnectGameServerNum_1 ",this.m_nConnectGameServerNum_1); 
         if (this.m_nConnectGameServerNum_1 != -1) {
             clearTimeout(this.m_nConnectGameServerNum_1);
         }
@@ -259,8 +275,12 @@ export class NetWork {
         this.m_pSocket = null;
         this.m_eNetWorkState = NetWorkState.NetWorkState_CLOSE;
         let pEvent = new cc.Event.EventCustom(clientDefine.clientDefine_close, true);
-        cc.systemEvent.dispatchEvent(pEvent);
-        this.timeOutConnect();
+        cc.systemEvent.dispatchEvent(pEvent);  
+
+        //不是手动关闭，就超时自动连接
+        if(!this.m_bIsHoldClose){
+            this.timeOutConnect();
+        } 
     }
     private onError(ev): void {
         console.log(" error ");
