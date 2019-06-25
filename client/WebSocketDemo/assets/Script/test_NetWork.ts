@@ -32,7 +32,15 @@ failedHandler(){
 btn_onclick(){
     let data= {'name':1};
 
-    NetWork.getInstance().sendMsg(data,101)
+    NetWork.getInstance().sendMsg(data,101,102,(data) =>{
+        console.log(" 102 ",JSON.stringify(data))
+    })
+  
+}
+btn_onclick2(){
+    let data= {'name':1};
+
+    NetWork.getInstance().sendMsg(data,103)
   
 }
 //断开连接
@@ -52,9 +60,14 @@ btn_create(){
     * @param message 消息
     */
     public onMsg(message: any): boolean {
+        console.log(message.command +"--"+JSON.stringify(message))
         switch (message.command) {
             case 101: {
-                console.log(JSON.stringify(message))
+               
+                return true; // 返回reture表示消息只在这里处理，不在往下传递
+            }
+            case 103: {
+              
                 return true; // 返回reture表示消息只在这里处理，不在往下传递
             }
         }

@@ -316,7 +316,7 @@ export class NetWork {
     public sendMsg(msgBody: any, command: number, responseCommand: number = null, callBack: Function = null): boolean {
         if (this.isConnect()) {
             msgBody.command = command;
-            this.m_pSocket.send(msgBody);
+            this.m_pSocket.send(JSON.stringify(msgBody));
             callBack && (this.m_vMessageCallBack[responseCommand] = callBack);
             return true;
         } else {
